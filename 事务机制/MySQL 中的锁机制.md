@@ -188,21 +188,15 @@ MDL 锁作用是：防止 DDL 操作和 DML 操作并发，保证变更表结构
 - Gap Lock：间隙锁，作用于记录与记录之间的空隙，作用仅仅是为了防止满足搜索条件的记录插入空隙（防止插入幻影记录）
 - Next-Key Lock：索引区间锁，本质是一个行锁 和 一个 Gap Lock 的结合体
 
+InnoDB 存储引擎的行级锁是通过给索引上的索引项加锁来实现的，因此如果一条 SQL 语句没有走索引，那么不会使用行级锁的，会使用表锁。
+
+行级锁的缺点是：由于需要请求大量的锁资源，所以速度慢，内存消耗大。
+
 # Gap Lock 说明
 
 > A gap lock is a lock on a gap between index records, or a lock on the gap before the first or after the last index record. For example, SELECT c1 FROM t WHERE c1 BETWEEN 10 and 20 FOR UPDATE; prevents other transactions from inserting a value of 15 into column t.c1, whether or not there was already any such value in the column, because the gaps between all existing values in the range are locked.
 
 只在可重复读或以上隔离级别下的特定操作才会加间隙锁。在 加读写锁的 select、update 和 delete 时，除了基于唯一索引（主键索引也属于唯一索引）的查询之外，基于其他索引查询时都会加间隙锁。
-
-能够加 Gap Lock 的要求：
-
-- 必须是可重复读或以上隔离级别
-- 如果是 select，则必须以给读到的记录加读写锁的方式
-
-- - 可重复读隔离级别下的 select ... for update、select ... lock in share mode
-  - 可串行化隔离级别下的 select ...（加共享锁）以及上面两种手动加共享锁，排他锁的方式
-
-- 必须是能够走索引的查询，如果是全表扫描的查询那么没有办法加 Gap Lock。
 
 ------
 
